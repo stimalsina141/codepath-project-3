@@ -61,29 +61,58 @@ Prompts:
 
 ## 6. Limitations and Bias 
 
-Where the system struggles or behaves unfairly. 
+The biggest weakness I found is that the "likes acoustic" setting secretly works like a "likes calm music" switch. In my catalog, every acoustic song has an energy of 0.52 or lower, and every non-acoustic song has an energy of 0.55 or higher, so there's no such thing as a loud acoustic song or a quiet electronic one. When I tested an "Acoustic Headbanger" profile (angry metal, energy 0.95, likes acoustic), three of the top five were calm lofi and jazz study songs, because the +0.5 acoustic bonus pulled them up. So people whose taste crosses that line, like someone who loves energetic acoustic folk-rock or calm electronic music, can't really be served, and they get pushed toward whatever is "normal" for their side. It's a small filter bubble that comes from the data, not from the code itself.
 
-Prompts:  
+Other weaknesses I noticed:
 
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
+- Genre and mood only count if the words match exactly, so "metal" gets nothing for a rock fan, "indie pop" gets nothing for a pop fan, and even "Pop" with a capital P gets nothing.
+- Most genres only have one song. A lofi fan gets three real matches, but a rock fan gets one, and the rest of the list is filler.
+- It never looks at whether a song sounds happy or sad (valence), so it can't tell a calm sad song from a calm happy one.
 
 ---
 
 ## 7. Evaluation  
 
-How you checked whether the recommender behaved as expected. 
+**Profiles I tested**
 
-Prompts:  
+I tested 3 normal profiles and 5 "edge case" profiles that were meant to trick the system:
 
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
+- **Pop / Happy:** upbeat pop with singing, energy 0.80
+- **Study Session:** calm lofi with no singing, energy 0.40
+- **Deep Intense Rock:** loud rock with singing, energy 0.90
+- **Sad but Hyped:** wants sad folk songs but at energy 0.90
+- **Acoustic Headbanger:** wants angry metal at energy 0.95, but also acoustic and no singing
+- **Capital Letters:** the same as Pop / Happy, just typed as "Pop" and "Happy"
+- **Not in Catalog:** wants "k-pop" and "dreamy", which no song has
+- **Energy Too High:** wants energy 1.5, which is outside the 0 to 1 range
 
-No need for numeric metrics unless you created some.
+For each one I checked if the #1 song made sense, if the rest of the top 5 felt like something that person would actually want, and if the reasons explained the score.
+
+**What surprised me**
+
+- One capital letter broke everything. "Pop" isn't the same as "pop" to the program, so Sunrise City dropped from 4.98 to 1.98 and Gym Hero disappeared from the list.
+- Fiesta de Fuego showed up in 5 of the 8 top-5 lists. It's a loud song with singing, so once the real matches run out it fills the empty spots for almost anyone who wants high energy.
+- An energy target of 1.5 gave some songs negative points. Moonlit Sonata got -0.32 for energy, and the reason printed as "+-0.32".
+- Changing the weights barely changed anything (see the experiment below).
+
+**Why "Gym Hero" shows up for someone who wants Happy Pop**
+
+Gym Hero is a pop song, so it gets the biggest reward right away: 2 points for matching the genre. It's also loud, has singing, and isn't acoustic, which is exactly what this person asked for, so it picks up almost every other point too. The only thing it misses is the mood, because it's "intense" instead of "happy," and that only costs 1 point. A happy song that isn't labeled "pop" loses 2 points instead, so Gym Hero ends up at #2 (3.87) ahead of Rooftop Lights, a happy indie pop song (2.96). The system basically trusts the genre label more than the feeling of the song.
+
+**Comparing profiles to each other**
+
+- **Pop / Happy vs. Study Session:** Their lists have zero songs in common. Pop / Happy gets loud songs with singing (energy 0.76 to 0.93), and Study Session gets calm acoustic songs with no singing (energy 0.28 to 0.42). This makes sense because the two profiles are opposite on every setting.
+- **Study Session vs. Deep Intense Rock:** Each one's favorite songs are at the bottom of the other's list. Storm Runner is #1 for rock but #18 for the study listener, and the lofi songs land between #15 and #18 for the rock fan. That's what should happen for two opposite tastes.
+- **Pop / Happy vs. Deep Intense Rock:** They share three songs (Gym Hero, Fiesta de Fuego, Sunrise City), because both want loud, non-acoustic songs with singing. Gym Hero is #2 for both, but for different reasons: for pop it matches the genre, and for rock it matches the "intense" mood. Only the genre and mood are different, so it makes sense that the rest of the list is similar.
+- **Deep Intense Rock vs. Sad but Hyped:** Both want energy 0.90, so spots #2 to #5 are almost the same loud songs. The only difference is #1: Sad but Hyped gets Letters I Never Sent, a *calm* sad folk song. Matching genre and mood (3 points) beat being far off on energy (it only lost 0.66), so the system picked "sad" over "hyped."
+- **Deep Intense Rock vs. Acoustic Headbanger:** Both want really loud music, but the rock list stays loud the whole way down, while the headbanger list fills #3 to #5 with calm lofi and jazz. The only change is asking for acoustic and no singing, and in my data those songs are all calm, so the +1.0 in bonuses outweighed the energy gap. This doesn't really make sense for the user, and it's how I found the main weakness in section 6.
+- **Pop / Happy vs. Capital Letters:** These should give the same results, but they don't. The capital letters made genre and mood never match, so the list turned into "songs sorted by energy." This shows the matching is too strict.
+- **Pop / Happy vs. Not in Catalog:** Pop / Happy's #1 scores 4.98 with a big gap to the rest. Not in Catalog's top 5 are all squeezed between 1.85 and 1.94, which basically means "nothing matched, here's some medium-high energy songs." The system still recommends things without telling the user nothing really fit.
+- **Deep Intense Rock vs. Energy Too High:** Both lists rank the loudest songs near the top, which is the right idea. But no song can ever be "close" to 1.5, so the energy points are much lower, and the quietest songs actually get negative points. The order makes sense, but the scores don't.
+
+**Experiment: weight shift**
+
+I tried cutting the genre weight in half (2.0 to 1.0) and doubling the energy weight (1.0 to 2.0). The best possible score stayed at 5.0, so the math still worked. Six of the eight profiles kept the exact same order, and only the numbers changed. Two got a little better: Pop / Happy moved Rooftop Lights (happy) above Gym Hero (intense), and Acoustic Headbanger stopped getting study music. But Iron Tempest still ranked behind Fiesta de Fuego for the rock fan, because the real problem is that "metal" doesn't count as "rock," and weights can't fix that. Since it was mostly just different and not more accurate, I went back to the original weights.
 
 ### Stress test output
 
