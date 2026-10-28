@@ -9,9 +9,9 @@ You will implement the functions in recommender.py:
 - recommend_songs
 """
 
-from src.recommender import load_songs, recommend_songs
+import argparse
 
-MAX_SCORE = 5.0
+from src.recommender import load_songs, recommend_songs, max_score, STRATEGIES
 
 # Default profile: someone who wants upbeat, happy pop with vocals
 POP_HAPPY = {
@@ -87,6 +87,36 @@ ENERGY_TOO_HIGH = {
     "likes_instrumental": False,
 }
 
+# --- Profiles that use the advanced features ---
+
+# Rock fan who also likes metal-ish vibes, 2000s music, and live recordings
+ROCK_WITH_TAGS = {
+    "favorite_genre": "rock",
+    "favorite_mood": "intense",
+    "target_energy": 0.90,
+    "likes_acoustic": False,
+    "likes_instrumental": False,
+    "wanted_tags": ["intense", "aggressive", "dark"],
+    "target_popularity": 50,
+    "favorite_decade": 2000,
+    "likes_live": True,
+    "likes_rap": False,
+}
+
+# Someone who wants older, warm, less-known songs
+NOSTALGIC_HIDDEN_GEMS = {
+    "favorite_genre": "country",
+    "favorite_mood": "nostalgic",
+    "target_energy": 0.50,
+    "likes_acoustic": True,
+    "likes_instrumental": False,
+    "wanted_tags": ["nostalgic", "warm"],
+    "target_popularity": 30,
+    "favorite_decade": 1990,
+    "likes_live": True,
+    "likes_rap": False,
+}
+
 PROFILES = [
     ("Pop / Happy", POP_HAPPY),
     ("Study Session", STUDY_SESSION),
@@ -96,10 +126,12 @@ PROFILES = [
     ("Edge Case: Capital Letters", CAPITAL_LETTERS),
     ("Edge Case: Not in Catalog", NOT_IN_CATALOG),
     ("Edge Case: Energy Too High", ENERGY_TOO_HIGH),
+    ("Advanced: Rock with Mood Tags", ROCK_WITH_TAGS),
+    ("Advanced: Nostalgic Hidden Gems", NOSTALGIC_HIDDEN_GEMS),
 ]
 
 
-def print_recommendations(name: str, user_prefs: dict, recommendations: list) -> None:
+def print_recommendations(name: str, user_prefs: dict, recommendations: list, top_score: float) -> None:
     """Prints a profile header followed by each recommended song, its score, and its reasons."""
     yes_no = lambda value: "yes" if value else "no"
     line = "=" * 60
@@ -112,11 +144,19 @@ def print_recommendations(name: str, user_prefs: dict, recommendations: list) ->
         f"acoustic={yes_no(user_prefs['likes_acoustic'])} | "
         f"instrumental={yes_no(user_prefs['likes_instrumental'])}"
     )
+    if "wanted_tags" in user_prefs:
+        print(
+            f"  tags={'/'.join(user_prefs['wanted_tags'])} | "
+            f"popularity={user_prefs['target_popularity']} | "
+            f"decade={user_prefs['favorite_decade']}s | "
+            f"live={yes_no(user_prefs['likes_live'])} | "
+            f"rap={yes_no(user_prefs['likes_rap'])}"
+        )
     print(line)
 
     for rank, (song, score, explanation) in enumerate(recommendations, start=1):
         print(f"\n  #{rank}  {song['title']}  ({song['artist']})")
-        print(f"      Score: {score:.2f} / {MAX_SCORE:.2f}")
+        print(f"      Score: {score:.2f} / {top_score:.2f}")
         print("      Why:")
         for reason in explanation.split(", "):
             print(f"        - {reason}")
@@ -124,12 +164,18 @@ def print_recommendations(name: str, user_prefs: dict, recommendations: list) ->
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Music Recommender Simulation")
+    parser.add_argument("--mode", choices=STRATEGIES.keys(), default="balanced",
+                        help="which scoring mode to rank songs with")
+    strategy = STRATEGIES[parser.parse_args().mode]
+
     songs = load_songs("data/songs.csv")
-    print(f"Loaded songs: {len(songs)}\n")
+    print(f"Loaded songs: {len(songs)}")
+    print(f"Scoring mode: {strategy.name} ({strategy.description})\n")
 
     for name, user_prefs in PROFILES:
-        recommendations = recommend_songs(user_prefs, songs, k=5)
-        print_recommendations(name, user_prefs, recommendations)
+        recommendations = recommend_songs(user_prefs, songs, k=5, strategy=strategy)
+        print_recommendations(name, user_prefs, recommendations, max_score(user_prefs, strategy))
 
 
 if __name__ == "__main__":

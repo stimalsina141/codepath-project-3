@@ -101,6 +101,14 @@ pip install -r requirements.txt
 python -m src.main
 ```
 
+To switch scoring modes, add `--mode` (the default is `balanced`):
+
+```bash
+python -m src.main --mode genre-first
+python -m src.main --mode mood-first
+python -m src.main --mode energy-focused
+```
+
 ### Running Tests
 
 Run the starter tests with:
@@ -119,6 +127,7 @@ This is what I get when I run `python -m src.main`. The default profile is pop/h
 
 ```
 Loaded songs: 20
+Scoring mode: Balanced (Genre counts most, then mood and energy)
 
 ============================================================
   Profile: Pop / Happy

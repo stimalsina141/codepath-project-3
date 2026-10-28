@@ -40,6 +40,7 @@ The best possible score is 5. After every song is scored, they get sorted from h
 - **Genres:** 17 different ones, including pop, lofi, rock, jazz, hip-hop, country, classical, r&b, metal, reggae, edm, folk, latin, and blues. Lofi has the most with 3 songs, and most genres only have 1.
 - **Moods:** 16 different ones, like happy, chill, intense, sad, angry, romantic, and nostalgic.
 - **Features for each song:** genre, mood, energy, tempo, valence (how happy it sounds), danceability, acousticness, and instrumentalness. I added the instrumentalness column myself. The number features go from 0 to 1, except tempo.
+- **Advanced features (added for the stretch challenge):** popularity (0 to 100), release decade, 3 detailed mood tags per song (like "aggressive" or "nostalgic"), liveness, and speechiness. These only count when a user sets a preference for them, so the basic profiles score exactly the same as before.
 - **Not used in scoring:** tempo and danceability, because in this data they go up and down almost exactly with energy, so they'd just count energy again. Valence isn't used yet either.
 
 **Limits:** All the songs and artists are made up, and the numbers are my best guesses, not real measurements. 20 songs is tiny, so most tastes only have one real match. There are also no loud acoustic songs or quiet electronic songs. It also has no info about lyrics, language, release year, or how popular a song is.
