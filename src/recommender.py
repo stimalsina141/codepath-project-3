@@ -1,6 +1,6 @@
 import csv
 from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 # Scoring weights (max score 5.0: 2.0 + 1.0 + 1.0 + 0.5 + 0.5)
 # Experiment tried: genre 1.0 / energy 2.0 -> mostly same rankings, so kept the original
@@ -36,6 +36,7 @@ class UserProfile:
     favorite_mood: str
     target_energy: float
     likes_acoustic: bool
+    likes_instrumental: bool = False
 
 class Recommender:
     """
@@ -46,12 +47,15 @@ class Recommender:
         self.songs = songs
 
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
-        # TODO: Implement recommendation logic
-        return self.songs[:k]
+        """Returns the top k songs for this user, highest score first (uses score_song)."""
+        user_prefs = asdict(user)
+        ranked = sorted(self.songs, key=lambda song: score_song(user_prefs, asdict(song))[0], reverse=True)
+        return ranked[:k]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
-        # TODO: Implement explanation logic
-        return "Explanation placeholder"
+        """Returns the song's score and the reasons it earned its points, as one sentence."""
+        score, reasons = score_song(asdict(user), asdict(song))
+        return f"Score {score:.2f}: " + ", ".join(reasons)
 
 def load_songs(csv_path: str) -> List[Dict]:
     """Reads songs.csv into a list of dicts, turning the number columns into ints and floats."""
